@@ -1,8 +1,10 @@
+import 'dart:io';
 
-import 'package:json_api_server/src/router.dart';
+import 'package:json_api_server/src/response.dart';
+import 'package:json_api_server/src/routing.dart';
 
 abstract class RequestTarget {
-  Uri url(URLDesign design);
+  Uri url(Routing design);
 
   const RequestTarget();
 }
@@ -13,7 +15,13 @@ class CollectionTarget extends RequestTarget {
   const CollectionTarget(this.type);
 
   @override
-  Uri url(URLDesign design) => design.collection(this);
+  Uri url(Routing design) => design.collection(type);
+
+  CollectionResponse createResponse(
+          HttpRequest request, ResponseBuilder builder) =>
+      builder.collection(this, request);
+
+
 }
 
 class ResourceTarget extends RequestTarget {
@@ -23,7 +31,11 @@ class ResourceTarget extends RequestTarget {
   const ResourceTarget(this.type, this.id);
 
   @override
-  Uri url(URLDesign design) => design.resource(this);
+  Uri url(Routing design) => design.resource(type, id);
+
+  ResourceResponse createResponse(
+          HttpRequest request, ResponseBuilder builder) =>
+      builder.resource(this, request);
 }
 
 class RelationshipTarget extends RequestTarget {
@@ -34,9 +46,13 @@ class RelationshipTarget extends RequestTarget {
   const RelationshipTarget(this.type, this.id, this.relationship);
 
   @override
-  Uri url(URLDesign design) => design.relationship(this);
+  Uri url(Routing design) => design.relationship(type, id, relationship);
 
   RelatedTarget toRelated() => RelatedTarget(type, id, relationship);
+
+  RelationshipResponse createResponse(
+          HttpRequest request, ResponseBuilder builder) =>
+      builder.relationship(this, request);
 }
 
 class RelatedTarget extends RequestTarget {
@@ -47,8 +63,9 @@ class RelatedTarget extends RequestTarget {
   const RelatedTarget(this.type, this.id, this.relationship);
 
   @override
-  Uri url(URLDesign design) => design.related(this);
+  Uri url(Routing design) => design.related(type, id, relationship);
 
-  RelationshipTarget toRelationship() =>
-      RelationshipTarget(type, id, relationship);
+  RelatedResponse createResponse(
+          HttpRequest request, ResponseBuilder builder) =>
+      builder.related(this, request);
 }

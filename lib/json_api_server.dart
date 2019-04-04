@@ -4,7 +4,5 @@ export 'package:json_api_server/src/document_builder.dart';
 export 'package:json_api_server/src/numbered_page.dart';
 export 'package:json_api_server/src/page.dart';
 export 'package:json_api_server/src/request_target.dart';
-export 'package:json_api_server/src/router.dart';
+export 'package:json_api_server/src/routing.dart';
 export 'package:json_api_server/src/server.dart';
-export 'package:json_api_server/src/standard_document_builder.dart';
-export 'package:json_api_server/src/standard_router.dart';
