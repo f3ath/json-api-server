@@ -6,35 +6,42 @@ import 'package:json_api_document/json_api_document.dart';
 import 'package:json_api_server/src/collection.dart';
 import 'package:json_api_server/src/controller.dart';
 import 'package:json_api_server/src/document_builder.dart';
-import 'package:json_api_server/src/request_target.dart';
+import 'package:json_api_server/src/request.dart';
 import 'package:json_api_server/src/routing.dart';
 
+class ServerResponse {
+  final Document document;
+  final int status;
+  final headers = <String, String>{'Content-Type': 'application/vnd.api+json'};
+
+  ServerResponse(this.status, this.document, {Map<String, String> headers}) {
+    this.headers.addAll(headers ?? {});
+  }
+
+  ServerResponse.empty(int status, {Map<String, String> headers})
+      : this(status, null, headers: headers);
+
+  Future<void> send(HttpResponse http) async {
+    headers.forEach(http.headers.add);
+    if (document != null) {
+      http.write(json.encode(document));
+    }
+    return http.close();
+  }
+}
+
 class ResponseBuilder {
-  final Routing routing;
-  final DocumentBuilder docBuilder;
-
-  ResponseBuilder(this.docBuilder, this.routing);
-
-  collection(CollectionTarget target, HttpRequest request) =>
-      CollectionResponse(target, request, docBuilder, routing);
-
-  resource(ResourceTarget target, HttpRequest request) =>
-      ResourceResponse(target, request, docBuilder, routing);
-
-  relationship(RelationshipTarget target, HttpRequest request) =>
-      RelationshipResponse(target, request, docBuilder, routing);
-
-  related(RelatedTarget target, HttpRequest request) =>
-      RelatedResponse(target, request, docBuilder, routing);
+  
 }
 
 class Responder {
-  final HttpRequest httpRequest;
+  final HttpResponse http;
+  final Uri self;
   final commonHeaders = <String, String>{'Access-Control-Allow-Origin': '*'};
   final DocumentBuilder docBuilder;
   final Routing routing;
 
-  Responder(this.httpRequest, this.docBuilder, this.routing);
+  Responder(this.self, this.http, this.docBuilder, this.routing);
 
   Future<void> sendSeeOther(Resource resource) {
     return write(303, headers: {
@@ -42,23 +49,44 @@ class Responder {
     });
   }
 
-  Future write(int status,
+  Future<void> write(int status,
       {Map<String, String> headers = const {}, Document document}) {
-    httpRequest.response.statusCode = status;
+    http.statusCode = status;
     <String, String>{}
       ..addAll(commonHeaders)
       ..addAll(headers)
-      ..forEach(httpRequest.response.headers.add);
+      ..forEach(http.headers.add);
 
     if (document != null) {
-      httpRequest.response.write(json.encode(document));
+      http.write(json.encode(document));
     }
-    return httpRequest.response.close();
+    return http.close();
   }
 
-  Future error(int status, Iterable<JsonApiError> errors,
+  Future<void> error(int status, Iterable<JsonApiError> errors,
           {Map<String, String> headers = const {}}) =>
-      write(status, headers: headers, document: docBuilder.error(errors));
+      write(status, headers: headers, document: docBuilder.errorDocument(errors));
+
+  Future<void> sendCreated(Resource resource) {
+    final doc = docBuilder.resourceDocument(resource, self);
+    return write(201,
+        headers: {'Location': doc.data.resourceObject.self.uri.toString()},
+        document: doc);
+  }
+
+  Future<void> sendAccepted(Resource job) {
+    final doc = docBuilder.resourceDocument(job, self);
+    return write(202,
+        headers: {
+          'Content-Location': doc.data.resourceObject.self.uri.toString()
+        },
+        document: doc);
+  }
+
+  Future<void> sendNoContent() => write(204);
+
+  Future<void> sendCollection(Collection<Resource> resources) =>
+      write(200, document: docBuilder.collectionDocument(resources, self));
 }
 
 abstract class Response<T extends RequestTarget> {
@@ -72,14 +100,13 @@ abstract class Response<T extends RequestTarget> {
   Responder r;
 
   Response(this.target, this.request, this.docBuilder, Routing routing) {
-    r = Responder(request, docBuilder, routing);
+    r = Responder(request.requestedUri, request.response, docBuilder, routing);
   }
 
   Future<void> sendNoContent() => r.write(204);
 
   Future<void> sendAccepted(Resource resource) {
-    final doc = docBuilder.resource(resource,
-        ResourceTarget(resource.type, resource.id), request.requestedUri);
+    final doc = docBuilder.resourceDocument(resource, request.requestedUri);
     return r.write(202,
         headers: {
           'Content-Location': doc.data.resourceObject.self.uri.toString()
@@ -103,24 +130,6 @@ abstract class Response<T extends RequestTarget> {
       r.write(200, document: Document.empty(meta));
 }
 
-class CollectionResponse extends Response<CollectionTarget>
-    implements FetchCollectionResponse, CreateResourceResponse {
-  CollectionResponse(CollectionTarget target, HttpRequest request,
-      DocumentBuilder docBuilder, Routing routing)
-      : super(target, request, docBuilder, routing);
-
-  Future<void> sendCollection(Collection<Resource> resources) => r.write(200,
-      document: docBuilder.collection(resources, target, request.requestedUri));
-
-  Future<void> sendCreated(Resource resource) {
-    final doc = docBuilder.resource(resource,
-        ResourceTarget(resource.type, resource.id), request.requestedUri);
-    return r.write(201,
-        headers: {'Location': doc.data.resourceObject.self.uri.toString()},
-        document: doc);
-  }
-}
-
 class RelatedResponse extends Response<RelatedTarget>
     implements FetchRelatedResponse {
   RelatedResponse(RelatedTarget target, HttpRequest request,
@@ -128,12 +137,11 @@ class RelatedResponse extends Response<RelatedTarget>
       : super(target, request, docBuilder, routing);
 
   Future<void> sendCollection(Collection<Resource> resources) => r.write(200,
-      document: docBuilder.relatedCollection(
-          resources, target, request.requestedUri));
+      document: docBuilder.relatedCollectionDocument(resources, request.requestedUri));
 
   Future<void> sendResource(Resource resource) => r.write(200,
       document:
-          docBuilder.relatedResource(resource, target, request.requestedUri));
+          docBuilder.relatedResourceDocument(resource, target, request.requestedUri));
 }
 
 class RelationshipResponse extends Response<RelationshipTarget>
@@ -147,10 +155,10 @@ class RelationshipResponse extends Response<RelationshipTarget>
       : super(target, request, docBuilder, routing);
 
   Future<void> sendToMany(Iterable<Identifier> collection) => r.write(200,
-      document: docBuilder.toMany(collection, target, request.requestedUri));
+      document: docBuilder.toManyDocument(collection, target, request.requestedUri));
 
   Future<void> sendToOne(Identifier id) => r.write(200,
-      document: docBuilder.toOne(id, target, request.requestedUri));
+      document: docBuilder.toOneDocument(id, target, request.requestedUri));
 }
 
 class ResourceResponse extends Response<ResourceTarget>
@@ -172,6 +180,6 @@ class ResourceResponse extends Response<ResourceTarget>
 
   Future _resource(Resource resource, {Iterable<Resource> included}) => r.write(
       200,
-      document: docBuilder.resource(resource, target, request.requestedUri,
+      document: docBuilder.resourceDocument(resource, request.requestedUri,
           included: included));
 }

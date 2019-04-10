@@ -14,16 +14,15 @@ class CarsController implements JsonApiController {
   CarsController(this._dao);
 
   @override
-  Future<void> fetchCollection(
-      ControllerRequest<CollectionTarget, void> request,
-      FetchCollectionResponse response) async {
+  Future<void> fetchCollection(FetchCollectionRequest request) async {
     if (!_dao.containsKey(request.target.type)) {
-      return response
+      return request
           .errorNotFound([JsonApiError(detail: 'Unknown resource type')]);
     }
-    final page = NumberedPage.fromQueryParameters(request.uri.queryParameters,
+    final page = NumberedPage.fromQueryParameters(
+        request.target.uri.queryParameters,
         total: _dao[request.target.type].length);
-    return response.sendCollection(Collection(
+    return request.sendCollection(Collection(
         _dao[request.target.type]
             .fetchCollection(offset: page.offset)
             .map(_dao[request.target.type].toResource),
@@ -31,7 +30,7 @@ class CarsController implements JsonApiController {
   }
 
   @override
-  Future<void> fetchRelated(ControllerRequest<RelatedTarget, void> request,
+  Future<void> fetchRelated(OldControllerRequest<RelatedTarget, void> request,
       FetchRelatedResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -69,7 +68,7 @@ class CarsController implements JsonApiController {
   }
 
   @override
-  Future<void> fetchResource(ControllerRequest<ResourceTarget, void> request,
+  Future<void> fetchResource(OldControllerRequest<ResourceTarget, void> request,
       FetchResourceResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -97,7 +96,7 @@ class CarsController implements JsonApiController {
 
   @override
   Future<void> fetchRelationship(
-      ControllerRequest<RelationshipTarget, void> request,
+      OldControllerRequest<RelationshipTarget, void> request,
       FetchRelationshipResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -124,7 +123,8 @@ class CarsController implements JsonApiController {
   }
 
   @override
-  Future<void> deleteResource(ControllerRequest<ResourceTarget, void> request,
+  Future<void> deleteResource(
+      OldControllerRequest<ResourceTarget, void> request,
       DeleteResourceResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -146,32 +146,30 @@ class CarsController implements JsonApiController {
 
   @override
   Future<void> createResource(
-      ControllerRequest<CollectionTarget, Resource> request,
-      CreateResourceResponse response) async {
+      CreateResourceRequest request, Resource resource) async {
     if (!_dao.containsKey(request.target.type)) {
-      return response
-          .errorNotFound([JsonApiError(detail: 'Unknown resource type')]);
+      return request
+          .error(404, [JsonApiError(detail: 'Unknown resource type')]);
     }
-    if (request.target.type != request.payload.type) {
-      return response
-          .errorConflict([JsonApiError(detail: 'Incompatible type')]);
+    if (request.target.type != resource.type) {
+      return request.error(409, [JsonApiError(detail: 'Incompatible type')]);
     }
 
-    if (request.payload.hasId) {
-      if (_dao[request.target.type].fetchById(request.payload.id) != null) {
-        return response
-            .errorConflict([JsonApiError(detail: 'Resource already exists')]);
+    if (resource.hasId) {
+      if (_dao[request.target.type].fetchById(resource.id) != null) {
+        return request
+            .error(409, [JsonApiError(detail: 'Resource already exists')]);
       }
-      final created = _dao[request.target.type].create(request.payload);
+      final created = _dao[request.target.type].create(resource);
       _dao[request.target.type].insert(created);
-      return response.sendNoContent();
+      return request.sendNoContent();
     }
 
     final created = _dao[request.target.type].create(Resource(
-        request.payload.type, Uuid().v4(),
-        attributes: request.payload.attributes,
-        toMany: request.payload.toMany,
-        toOne: request.payload.toOne));
+        resource.type, Uuid().v4(),
+        attributes: resource.attributes,
+        toMany: resource.toMany,
+        toOne: resource.toOne));
 
     if (request.target.type == 'models') {
       // Insertion is artificially delayed
@@ -180,17 +178,17 @@ class CarsController implements JsonApiController {
         return _dao[request.target.type].toResource(created);
       }));
       _dao['jobs'].insert(job);
-      return response.sendAccepted(_dao['jobs'].toResource(job));
+      return request.sendAccepted(_dao['jobs'].toResource(job));
     }
 
     _dao[request.target.type].insert(created);
 
-    return response.sendCreated(_dao[request.target.type].toResource(created));
+    return request.sendCreated(_dao[request.target.type].toResource(created));
   }
 
   @override
   Future<void> updateResource(
-      ControllerRequest<ResourceTarget, Resource> request,
+      OldControllerRequest<ResourceTarget, Resource> request,
       UpdateResourceResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -214,7 +212,7 @@ class CarsController implements JsonApiController {
 
   @override
   Future<void> replaceToOne(
-      ControllerRequest<RelationshipTarget, Identifier> request,
+      OldControllerRequest<RelationshipTarget, Identifier> request,
       ReplaceToOneResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -227,7 +225,7 @@ class CarsController implements JsonApiController {
 
   @override
   Future<void> replaceToMany(
-      ControllerRequest<RelationshipTarget, Iterable<Identifier>> request,
+      OldControllerRequest<RelationshipTarget, Iterable<Identifier>> request,
       ReplaceToManyResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response
@@ -240,7 +238,7 @@ class CarsController implements JsonApiController {
 
   @override
   Future<void> addToMany(
-      ControllerRequest<RelationshipTarget, Iterable<Identifier>> request,
+      OldControllerRequest<RelationshipTarget, Iterable<Identifier>> request,
       AddToManyResponse response) async {
     if (!_dao.containsKey(request.target.type)) {
       return response

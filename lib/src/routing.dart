@@ -1,4 +1,4 @@
-import 'package:json_api_server/src/request_target.dart';
+import 'package:json_api_server/src/request.dart';
 
 /// The routing schema (URL Design) defines the design of URLs used by the server.
 class Routing {
@@ -29,17 +29,17 @@ class Routing {
   /// - [RelatedTarget]
   /// - null if the target can not be determined
   RequestTarget getTarget(Uri uri) {
-    final _ = uri.pathSegments;
-    switch (_.length) {
+    final seg = uri.pathSegments;
+    switch (seg.length) {
       case 1:
-        return CollectionTarget(_[0]);
+        return CollectionTarget(uri, seg[0]);
       case 2:
-        return ResourceTarget(_[0], _[1]);
+        return ResourceTarget(uri, seg[0], seg[1]);
       case 3:
-        return RelatedTarget(_[0], _[1], _[2]);
+        return RelatedTarget(uri, seg[0], seg[1], seg[2]);
       case 4:
-        if (_[2] == 'relationships') {
-          return RelationshipTarget(_[0], _[1], _[3]);
+        if (seg[2] == 'relationships') {
+          return RelationshipTarget(uri, seg[0], seg[1], seg[3]);
         }
     }
     return null;
