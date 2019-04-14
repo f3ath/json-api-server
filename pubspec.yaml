@@ -2,7 +2,7 @@ author: "Alexey Karapetov <karapetov@gmail.com>"
 description: "JSON:API Server. Supports JSON:API v1.0 (http://jsonapi.org)"
 homepage: "https://github.com/f3ath/json-api-server-dart"
 name: "json_api_server"
-version: "0.0.3"
+version: "0.0.4"
 dependencies:
   json_api_document: "^1.0.2"
   http: "^0.12.0"

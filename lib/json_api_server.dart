@@ -6,3 +6,4 @@ export 'package:json_api_server/src/page.dart';
 export 'package:json_api_server/src/request.dart';
 export 'package:json_api_server/src/routing.dart';
 export 'package:json_api_server/src/server.dart';
+export 'package:json_api_server/src/response.dart';

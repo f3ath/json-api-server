@@ -37,7 +37,7 @@ class Routing implements UriSchema {
   /// - [ResourceTarget]
   /// - [RelationshipTarget]
   /// - [RelatedTarget]
-  /// - [InvalidTarget] if the target can not be determined
+  /// - null if the target can not be determined
   RequestTarget getTarget(Uri uri) {
     final seg = uri.pathSegments;
     switch (seg.length) {
@@ -52,7 +52,7 @@ class Routing implements UriSchema {
           return RelationshipTarget(seg[0], seg[1], seg[3]);
         }
     }
-    return InvalidTarget();
+    return null;
   }
 
   Uri _path(List<String> segments) =>

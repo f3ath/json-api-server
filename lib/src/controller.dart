@@ -4,6 +4,8 @@ import 'package:json_api_document/json_api_document.dart';
 import 'package:json_api_server/src/request.dart';
 
 abstract class Controller {
+  bool supportsType(String type);
+
   FutureOr<void> fetchCollection(
       FetchCollection request, Map<String, List<String>> query);
 

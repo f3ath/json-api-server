@@ -1,7 +1,9 @@
 import 'package:json_api_server/src/request.dart';
-import 'package:json_api_server/src/response.dart';
 
 abstract class RequestTarget {
+  String get type;
+
+  /// Returns the request for the given [method], or null otherwise
   Request getRequest(String method);
 }
 
@@ -11,12 +13,12 @@ class CollectionTarget implements RequestTarget {
   const CollectionTarget(this.type);
 
   @override
-  Request getRequest(String method) =>
-      {
-        'GET': () => FetchCollection(this),
-        'POST': () => CreateResource(this)
-      }[method.toUpperCase()]() ??
-      InvalidRequest(ErrorResponse.methodNotAllowed([]));
+  Request getRequest(String method) {
+    method = method.toUpperCase();
+    if (method == 'GET') return FetchCollection(this);
+    if (method == 'POST') return CreateResource(this);
+    return null;
+  }
 }
 
 class ResourceTarget implements RequestTarget {
@@ -26,13 +28,13 @@ class ResourceTarget implements RequestTarget {
   const ResourceTarget(this.type, this.id);
 
   @override
-  Request getRequest(String method) =>
-      {
-        'GET': () => FetchResource(this),
-        'POST': () => DeleteResource(this),
-        'DELETE': () => UpdateResource(this)
-      }[method.toUpperCase()]() ??
-      InvalidRequest(ErrorResponse.methodNotAllowed([]));
+  Request getRequest(String method) {
+    method = method.toUpperCase();
+    if (method == 'GET') return FetchResource(this);
+    if (method == 'DELETE') return DeleteResource(this);
+    if (method == 'PATCH') return UpdateResource(this);
+    return null;
+  }
 }
 
 class RelationshipTarget implements RequestTarget {
@@ -43,13 +45,13 @@ class RelationshipTarget implements RequestTarget {
   const RelationshipTarget(this.type, this.id, this.relationship);
 
   @override
-  Request getRequest(String method) =>
-      {
-        'GET': () => FetchRelationship(this),
-        'PATCH': () => UpdateRelationship(this),
-        'POST': () => AddToMany(this)
-      }[method.toUpperCase()]() ??
-      InvalidRequest(ErrorResponse.methodNotAllowed([]));
+  Request getRequest(String method) {
+    method = method.toUpperCase();
+    if (method == 'GET') return FetchRelationship(this);
+    if (method == 'PATCH') return UpdateRelationship(this);
+    if (method == 'POST') return AddToMany(this);
+    return null;
+  }
 }
 
 class RelatedTarget implements RequestTarget {
@@ -61,13 +63,8 @@ class RelatedTarget implements RequestTarget {
 
   @override
   Request getRequest(String method) {
-    if (method.toUpperCase() == 'GET') return FetchRelated(this);
-    return InvalidRequest(ErrorResponse.methodNotAllowed([]));
+    method = method.toUpperCase();
+    if (method == 'GET') return FetchRelated(this);
+    return null;
   }
-}
-
-class InvalidTarget implements RequestTarget {
-  @override
-  Request getRequest(String method) =>
-      InvalidRequest(ErrorResponse.badRequest([]));
 }

@@ -10,6 +10,8 @@ import 'package:json_api_server/src/response.dart';
 abstract class Request {
   Response _response = ErrorResponse.notImplemented([]);
 
+  RequestTarget get target;
+
   Response get response => _response;
 
   FutureOr<void> call(
@@ -22,8 +24,8 @@ class FetchCollection extends Request with _Errors {
   FetchCollection(this.target);
 
   @override
-  FutureOr<Response> call(Controller controller,
-          Map<String, List<String>> query, Object payload) =>
+  FutureOr<void> call(Controller controller, Map<String, List<String>> query,
+          Object payload) =>
       controller.fetchCollection(this, query);
 
   void sendCollection(Collection<Resource> collection,
@@ -204,6 +206,8 @@ class AddToMany extends Request with _Errors {
 }
 
 class InvalidRequest extends Request {
+  final target = null;
+
   InvalidRequest(ErrorResponse response) {
     _response = response;
   }
