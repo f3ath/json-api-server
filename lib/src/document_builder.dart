@@ -21,68 +21,63 @@ class DocumentBuilder {
   Document<ResourceCollectionData> collectionDocument(
           Collection<Resource> collection, Uri self,
           {Iterable<Resource> included}) =>
-      Document(ResourceCollectionData(collection.elements.map(resourceObject),
-          self: Link(self), pagination: pagination(collection.page, self)));
+      Document(ResourceCollectionData(collection.elements.map(_resourceObject),
+          self: Link(self), pagination: _pagination(collection.page, self)));
 
   /// A collection of related resources
   Document<ResourceCollectionData> relatedCollectionDocument(
-          Collection<Resource> resources, Uri self,
+          Collection<Resource> collection, Uri self,
           {Iterable<Resource> included}) =>
-      Document(ResourceCollectionData(resources.elements.map(resourceObject),
-          self: Link(self), pagination: pagination(resources.page, self)));
+      Document(ResourceCollectionData(collection.elements.map(_resourceObject),
+          self: Link(self), pagination: _pagination(collection.page, self)));
 
   /// A single (primary) resource
   Document<ResourceData> resourceDocument(Resource resource, Uri self,
           {Iterable<Resource> included}) =>
       Document(
-        ResourceData(resourceObject(resource),
-            self: Link(self), included: included?.map(resourceObject)),
+        ResourceData(_resourceObject(resource),
+            self: Link(self), included: included?.map(_resourceObject)),
       );
 
   /// A single related resource
-  Document<ResourceData> relatedResourceDocument(
-          Resource resource, RelatedTarget target, Uri self,
+  Document<ResourceData> relatedResourceDocument(Resource resource, Uri self,
           {Iterable<Resource> included}) =>
-      Document(ResourceData(resourceObject(resource),
-          included: included?.map(resourceObject),
-          self:
-              Link(_url.related(target.type, target.id, target.relationship))));
+      Document(ResourceData(_resourceObject(resource),
+          included: included?.map(_resourceObject), self: Link(self)));
 
   /// A to-many relationship
   Document<ToMany> toManyDocument(Iterable<Identifier> collection,
           RelationshipTarget target, Uri self) =>
-      Document(ToMany(collection.map(identifierObject),
-          self: Link(
-              _url.relationship(target.type, target.id, target.relationship)),
+      Document(ToMany(collection.map(_identifierObject),
+          self: Link(self),
           related:
               Link(_url.related(target.type, target.id, target.relationship))));
 
   /// A to-one relationship
   Document<ToOne> toOneDocument(
           Identifier identifier, RelationshipTarget target, Uri self) =>
-      Document(ToOne(nullable(identifierObject)(identifier),
-          self: Link(
-              _url.relationship(target.type, target.id, target.relationship)),
+      Document(ToOne(nullable(_identifierObject)(identifier),
+          self: Link(self),
           related:
               Link(_url.related(target.type, target.id, target.relationship))));
 
   /// A document containing just a meta member
   Document metaDocument(Map<String, Object> meta) => Document.empty(meta);
 
-  IdentifierObject identifierObject(Identifier id) =>
+  IdentifierObject _identifierObject(Identifier id) =>
       IdentifierObject(id.type, id.id);
 
-  ResourceObject resourceObject(Resource resource) {
+  ResourceObject _resourceObject(Resource resource) {
     final relationships = <String, Relationship>{};
     relationships.addAll(resource.toOne.map((k, v) => MapEntry(
         k,
-        ToOne(nullable(identifierObject)(v),
+        ToOne(nullable(_identifierObject)(v),
             self: Link(_url.relationship(resource.type, resource.id, k)),
             related: Link(_url.related(resource.type, resource.id, k))))));
 
     relationships.addAll(resource.toMany.map((k, v) => MapEntry(
         k,
-        ToMany(v.map(identifierObject),
+        ToMany(v.map(_identifierObject),
             self: Link(_url.relationship(resource.type, resource.id, k)),
             related: Link(_url.related(resource.type, resource.id, k))))));
 
@@ -92,7 +87,7 @@ class DocumentBuilder {
         self: Link(_url.resource(resource.type, resource.id)));
   }
 
-  Pagination pagination(Page page, Uri self) {
+  Pagination _pagination(Page page, Uri self) {
     if (page == null) return Pagination.empty();
     return Pagination.fromLinks(page.map((_) => Link(_.addTo(self))));
   }

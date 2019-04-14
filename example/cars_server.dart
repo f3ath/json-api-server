@@ -53,31 +53,10 @@ Future<HttpServer> createServer(InternetAddress addr, int port) async {
     'jobs': JobDAO()
   });
 
-  final urlDesign = Routing(Uri.parse('http://localhost:$port'));
-  final docBuilder = DocumentBuilder(urlDesign);
-
   final httpServer = await HttpServer.bind(addr, port);
+  final jsonApiServer =
+      Server(Routing(Uri.parse('http://localhost:$port')), controller);
 
-  httpServer.forEach((request) async {
-    final serverRequest = await ServerRequest.fromHttp(request);
-    final target = urlDesign.getTarget(request.requestedUri);
-    if (target == null) {
-      await request.response.close();
-      return;
-    }
-
-    final controllerRequest = target.getRequest(request.method);
-    if (controllerRequest == null) {
-      await request.response.close();
-      return;
-    }
-    final response =
-        await controllerRequest.call(controller, serverRequest);
-
-    await request.response.close();
-//    await response
-//        .toServerResponse(request.uri, docBuilder)
-//        .send(request.response);
-  });
+  httpServer.forEach(jsonApiServer.process);
   return httpServer;
 }

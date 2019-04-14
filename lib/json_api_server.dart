@@ -5,5 +5,4 @@ export 'package:json_api_server/src/numbered_page.dart';
 export 'package:json_api_server/src/page.dart';
 export 'package:json_api_server/src/request.dart';
 export 'package:json_api_server/src/routing.dart';
-export 'package:json_api_server/src/server_request.dart';
-export 'package:json_api_server/src/server_response.dart';
+export 'package:json_api_server/src/server.dart';

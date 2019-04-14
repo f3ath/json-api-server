@@ -1,7 +1,8 @@
 import 'package:json_api_server/src/request.dart';
+import 'package:json_api_server/src/response.dart';
 
 abstract class RequestTarget {
-  ControllerRequest getRequest(String method);
+  Request getRequest(String method);
 }
 
 class CollectionTarget implements RequestTarget {
@@ -10,10 +11,12 @@ class CollectionTarget implements RequestTarget {
   const CollectionTarget(this.type);
 
   @override
-  ControllerRequest getRequest(String method) {
-    if (method == 'GET') return FetchCollection(this);
-    throw 'Invalid method $method';
-  }
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchCollection(this),
+        'POST': () => CreateResource(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
 class ResourceTarget implements RequestTarget {
@@ -23,10 +26,13 @@ class ResourceTarget implements RequestTarget {
   const ResourceTarget(this.type, this.id);
 
   @override
-  ControllerRequest getRequest(String method) {
-    // TODO: implement getRequest
-    return null;
-  }
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchResource(this),
+        'POST': () => DeleteResource(this),
+        'DELETE': () => UpdateResource(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
 class RelationshipTarget implements RequestTarget {
@@ -37,10 +43,13 @@ class RelationshipTarget implements RequestTarget {
   const RelationshipTarget(this.type, this.id, this.relationship);
 
   @override
-  ControllerRequest getRequest(String method) {
-    // TODO: implement getRequest
-    return null;
-  }
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchRelationship(this),
+        'PATCH': () => UpdateRelationship(this),
+        'POST': () => AddToMany(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
 class RelatedTarget implements RequestTarget {
@@ -51,8 +60,14 @@ class RelatedTarget implements RequestTarget {
   const RelatedTarget(this.type, this.id, this.relationship);
 
   @override
-  ControllerRequest getRequest(String method) {
-    // TODO: implement getRequest
-    return null;
+  Request getRequest(String method) {
+    if (method.toUpperCase() == 'GET') return FetchRelated(this);
+    return InvalidRequest(ErrorResponse.methodNotAllowed([]));
   }
+}
+
+class InvalidTarget implements RequestTarget {
+  @override
+  Request getRequest(String method) =>
+      InvalidRequest(ErrorResponse.badRequest([]));
 }

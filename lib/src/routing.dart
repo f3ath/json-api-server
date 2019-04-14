@@ -10,8 +10,6 @@ abstract class UriSchema {
   Uri resource(String type, String id);
 }
 
-
-
 /// The routing schema (URL Design) defines the design of URLs used by the server.
 class Routing implements UriSchema {
   final Uri _base;
@@ -34,12 +32,12 @@ class Routing implements UriSchema {
   /// Builds a URL for a single resource
   Uri resource(String type, String id) => _path([type, id]);
 
-  /// This function must return either:
+  /// This function must return one of the following:
   /// - [CollectionTarget]
   /// - [ResourceTarget]
   /// - [RelationshipTarget]
   /// - [RelatedTarget]
-  /// - null if the target can not be determined
+  /// - [InvalidTarget] if the target can not be determined
   RequestTarget getTarget(Uri uri) {
     final seg = uri.pathSegments;
     switch (seg.length) {
@@ -54,7 +52,7 @@ class Routing implements UriSchema {
           return RelationshipTarget(seg[0], seg[1], seg[3]);
         }
     }
-    return null;
+    return InvalidTarget();
   }
 
   Uri _path(List<String> segments) =>
