@@ -1,32 +1,41 @@
-
-import 'package:json_api_server/src/router.dart';
+import 'package:json_api_server/src/request.dart';
+import 'package:json_api_server/src/response.dart';
 
 abstract class RequestTarget {
-  Uri url(URLDesign design);
-
-  const RequestTarget();
+  Request getRequest(String method);
 }
 
-class CollectionTarget extends RequestTarget {
+class CollectionTarget implements RequestTarget {
   final String type;
 
   const CollectionTarget(this.type);
 
   @override
-  Uri url(URLDesign design) => design.collection(this);
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchCollection(this),
+        'POST': () => CreateResource(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
-class ResourceTarget extends RequestTarget {
+class ResourceTarget implements RequestTarget {
   final String type;
   final String id;
 
   const ResourceTarget(this.type, this.id);
 
   @override
-  Uri url(URLDesign design) => design.resource(this);
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchResource(this),
+        'POST': () => DeleteResource(this),
+        'DELETE': () => UpdateResource(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
-class RelationshipTarget extends RequestTarget {
+class RelationshipTarget implements RequestTarget {
   final String type;
   final String id;
   final String relationship;
@@ -34,12 +43,16 @@ class RelationshipTarget extends RequestTarget {
   const RelationshipTarget(this.type, this.id, this.relationship);
 
   @override
-  Uri url(URLDesign design) => design.relationship(this);
-
-  RelatedTarget toRelated() => RelatedTarget(type, id, relationship);
+  Request getRequest(String method) =>
+      {
+        'GET': () => FetchRelationship(this),
+        'PATCH': () => UpdateRelationship(this),
+        'POST': () => AddToMany(this)
+      }[method.toUpperCase()]() ??
+      InvalidRequest(ErrorResponse.methodNotAllowed([]));
 }
 
-class RelatedTarget extends RequestTarget {
+class RelatedTarget implements RequestTarget {
   final String type;
   final String id;
   final String relationship;
@@ -47,8 +60,14 @@ class RelatedTarget extends RequestTarget {
   const RelatedTarget(this.type, this.id, this.relationship);
 
   @override
-  Uri url(URLDesign design) => design.related(this);
+  Request getRequest(String method) {
+    if (method.toUpperCase() == 'GET') return FetchRelated(this);
+    return InvalidRequest(ErrorResponse.methodNotAllowed([]));
+  }
+}
 
-  RelationshipTarget toRelationship() =>
-      RelationshipTarget(type, id, relationship);
+class InvalidTarget implements RequestTarget {
+  @override
+  Request getRequest(String method) =>
+      InvalidRequest(ErrorResponse.badRequest([]));
 }

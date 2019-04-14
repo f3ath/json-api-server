@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:json_api_server/src/page.dart';
 
-
 /// This class represents a numbered page. It only concerns the page number and
 /// possibly the total number of pages. The page size (how many records per page)
 /// is irrelevant.
@@ -17,9 +16,8 @@ class NumberedPage extends Page {
 
   NumberedPage(this.number, {this.total});
 
-  NumberedPage.fromQueryParameters(Map<String, String> queryParameters,
-      {int total})
-      : this(int.parse(queryParameters[parameterName] ?? '1'), total: total);
+  NumberedPage.fromQueryParameters(Map<String, List<String>> query, {int total})
+      : this(int.parse(query[parameterName]?.first ?? '1'), total: total);
 
   int get offset => number - 1;
 
