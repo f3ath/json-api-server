@@ -1,8 +1,8 @@
-import 'package:json_api_server/src/page.dart';
-
 class Collection<T> {
   final Iterable<T> elements;
-  final Page page;
+  final int total;
 
-  Collection(this.elements, {this.page});
+  Collection(this.elements, {this.total});
+
+  Collection<K> map<K>(K fn(T _)) => Collection(elements.map(fn), total: total);
 }

@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:json_api_document/json_api_document.dart';
 import 'package:json_api_server/json_api_server.dart';
+import 'package:json_api_server/src/pagination/page.dart';
 import 'package:uuid/uuid.dart';
 
 import 'dao.dart';
@@ -10,17 +10,17 @@ import 'job_queue.dart';
 
 class CarsController implements Controller {
   final Map<String, DAO> _dao;
+  final PageFactory _page;
 
-  CarsController(this._dao);
+  CarsController(this._dao, this._page);
 
   @override
   void fetchCollection(
       FetchCollection request, Map<String, List<String>> query) {
     final dao = _getDao(request);
-    final page = NumberedPage.fromQueryParameters(query, total: dao.length);
-    request.sendCollection(Collection(
-        dao.fetchCollection(offset: page.offset).map(dao.toResource),
-        page: page));
+    final page = _page(query);
+    final collection = dao.fetchCollection(page);
+    request.sendCollection(collection.map(dao.toResource), page: page);
   }
 
   @override
@@ -41,17 +41,14 @@ class CarsController implements Controller {
     }
 
     if (res.toMany.containsKey(request.target.relationship)) {
-      final pageSize = 2;
-      final totalPages =
-          max(0, res.toMany[request.target.relationship].length - 1) ~/
-                  pageSize +
-              1;
-      final page = NumberedPage.fromQueryParameters(query, total: totalPages);
-      final resources = res.toMany[request.target.relationship]
-          .skip(page.offset * pageSize)
-          .take(pageSize)
+      final page = _page(query);
+      final relationships = res.toMany[request.target.relationship];
+      final resources = relationships
+          .skip(page.offset)
+          .take(page.limit)
           .map((id) => _dao[id.type].fetchByIdAsResource(id.id));
-      request.sendCollection(Collection(resources, page: page));
+      request.sendCollection(Collection(resources, total: relationships.length),
+          page: page);
       return;
     }
     request.errorNotFound([JsonApiError(detail: 'Relationship not found')]);
