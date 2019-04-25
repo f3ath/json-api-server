@@ -1,5 +1,6 @@
 import 'package:json_api_document/json_api_document.dart';
 import 'package:json_api_server/json_api_server.dart';
+import 'package:json_api_server/src/pagination/page.dart';
 import 'package:json_api_server/src/request_target.dart';
 
 abstract class Response {
@@ -35,13 +36,15 @@ class ErrorResponse extends Response {
 class CollectionResponse extends Response {
   final Collection<Resource> collection;
   final Iterable<Resource> included;
+  final Page page;
 
-  const CollectionResponse(this.collection, {this.included = const []})
+  const CollectionResponse(this.collection,
+      {this.included = const [], this.page})
       : super(200);
 
   @override
-  Document getDocument(DocumentBuilder builder, Uri self) =>
-      builder.collectionDocument(collection, self, included: included);
+  Document getDocument(DocumentBuilder builder, Uri self) => builder
+      .collectionDocument(collection, self, included: included, page: page);
 }
 
 class ResourceResponse extends Response {
@@ -71,13 +74,15 @@ class RelatedResourceResponse extends Response {
 class RelatedCollectionResponse extends Response {
   final Collection<Resource> collection;
   final Iterable<Resource> included;
+  final Page page;
 
-  const RelatedCollectionResponse(this.collection, {this.included = const []})
+  const RelatedCollectionResponse(this.collection,
+      {this.included = const [], this.page})
       : super(200);
 
   @override
   Document getDocument(DocumentBuilder builder, Uri self) =>
-      builder.relatedCollectionDocument(collection, self);
+      builder.relatedCollectionDocument(collection, self, page: page);
 }
 
 class ToOneResponse extends Response {

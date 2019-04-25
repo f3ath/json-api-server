@@ -4,6 +4,7 @@ import 'package:json_api_document/json_api_document.dart';
 import 'package:json_api_document/parser.dart';
 import 'package:json_api_server/json_api_server.dart';
 import 'package:json_api_server/src/controller.dart';
+import 'package:json_api_server/src/pagination/page.dart';
 import 'package:json_api_server/src/request_target.dart';
 import 'package:json_api_server/src/response.dart';
 
@@ -28,9 +29,9 @@ class FetchCollection extends Request with _Errors {
           Object payload) =>
       controller.fetchCollection(this, query);
 
-  void sendCollection(Collection<Resource> collection,
-      {Iterable<Resource> included}) {
-    _response = CollectionResponse(collection, included: included);
+  void sendCollection(Collection<Resource> resources,
+      {Iterable<Resource> included = const [], Page page}) {
+    _response = CollectionResponse(resources, included: included, page: page);
   }
 }
 
@@ -67,8 +68,10 @@ class FetchRelated extends Request with _Errors {
     _response = RelatedResourceResponse(resource);
   }
 
-  void sendCollection(Collection<Resource> collection) {
-    _response = RelatedCollectionResponse(collection);
+  void sendCollection(Collection<Resource> collection,
+      {Iterable<Resource> included = const [], Page page}) {
+    _response =
+        RelatedCollectionResponse(collection, included: included, page: page);
   }
 }
 

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:json_api_server/json_api_server.dart';
+import 'package:json_api_server/src/pagination/numbered_page.dart';
+import 'package:json_api_server/src/pagination/page_parameters.dart';
 
 import 'cars_server/controller.dart';
 import 'cars_server/dao.dart';
@@ -46,12 +48,17 @@ Future<HttpServer> createServer(InternetAddress addr, int port) async {
     Company('4')..name = 'Toyota',
   ].forEach(companies.insert);
 
-  final controller = CarsController({
-    'companies': companies,
-    'cities': cities,
-    'models': models,
-    'jobs': JobDAO()
-  });
+  final controller = CarsController(
+      {
+        'companies': companies,
+        'cities': cities,
+        'models': models,
+        'jobs': JobDAO()
+      },
+      (query) => NumberedPage(
+          int.parse(
+              PageParameters.fromQuery(query).parameters['number'] ?? '1'),
+          1));
 
   final httpServer = await HttpServer.bind(addr, port);
   final jsonApiServer =
