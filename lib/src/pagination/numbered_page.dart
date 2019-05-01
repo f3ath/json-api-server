@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:json_api_server/src/pagination/page.dart';
 import 'package:json_api_server/src/pagination/page_parameters.dart';
 
@@ -16,7 +14,6 @@ class NumberedPage implements Page {
   Uri addTo(Uri uri) =>
       PageParameters({'number': number.toString()}).addTo(uri);
 
-
   @override
   NumberedPage first() => NumberedPage(1, size);
 
@@ -24,7 +21,7 @@ class NumberedPage implements Page {
   NumberedPage last(int total) => NumberedPage((total - 1) ~/ size + 1, size);
 
   @override
-  NumberedPage prev() => number >  1 ? NumberedPage(number - 1, size) : null;
+  NumberedPage prev() => number > 1 ? NumberedPage(number - 1, size) : null;
 
   @override
   NumberedPage next(int total) {
@@ -40,4 +37,3 @@ class NumberedPage implements Page {
   @override
   int get offset => (number - 1) * size;
 }
-

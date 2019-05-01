@@ -16,7 +16,9 @@ void main() {
       'articles': ['title', 'body'],
       'people': ['name']
     });
-    expect(fields.query,
-        {'fields[articles]': ['title,body'], 'fields[people]': ['name']});
+    expect(fields.query, {
+      'fields[articles]': ['title,body'],
+      'fields[people]': ['name']
+    });
   });
 }
