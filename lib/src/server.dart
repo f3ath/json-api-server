@@ -11,8 +11,10 @@ class Server {
   final Routing routing;
   final Controller controller;
   final DocumentBuilder builder;
+  final String allowOrigin;
 
-  Server(this.routing, this.controller) : builder = DocumentBuilder(routing);
+  Server(this.routing, this.controller, {this.allowOrigin = '*'})
+      : builder = DocumentBuilder(routing);
 
   Future process(HttpRequest http) async {
     final target = routing.getTarget(http.requestedUri);
@@ -41,6 +43,9 @@ class Server {
   Future _send(HttpRequest http, Response response) {
     http.response.statusCode = response.status;
     response.getHeaders(routing).forEach(http.response.headers.add);
+    if (allowOrigin != null) {
+      http.response.headers.add('Access-Control-Allow-Origin', allowOrigin);
+    }
     final doc = response.getDocument(builder, http.requestedUri);
     if (doc != null) {
       http.response.write(json.encode(doc));

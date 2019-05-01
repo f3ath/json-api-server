@@ -1,1 +1,1 @@
-# json-api-server-dart
+JSON:API Server. This is a work-progress, the API is very unstable.
