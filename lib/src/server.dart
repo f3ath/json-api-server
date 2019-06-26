@@ -32,7 +32,7 @@ class Server {
       return _send(http, ErrorResponse.methodNotAllowed([]));
     }
 
-    final body = await http.transform(utf8.decoder).join();
+    final body = await http.cast<List<int>>().transform(utf8.decoder).join();
 
     await request.call(controller, http.requestedUri.queryParametersAll,
         body.isNotEmpty ? json.decode(body) : null);
