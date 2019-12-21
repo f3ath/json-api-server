@@ -1,1 +1,1 @@
-JSON:API Server. This is a work-progress, the API is very unstable.
+Deprecated. Use [json_api](https://pub.dev/packages/json_api).
