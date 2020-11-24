@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:json_api/handler.dart';
 import 'package:json_api/http.dart';
 
 class DartIOHttpHandler {
   DartIOHttpHandler(this._handler);
 
-  final HttpHandler _handler;
+  final Handler<HttpRequest, HttpResponse> _handler;
 
   Future<void> call(io.HttpRequest ioRequest) async {
     final request = await _convertRequest(ioRequest);

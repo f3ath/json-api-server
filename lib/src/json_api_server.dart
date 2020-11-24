@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:json_api/handler.dart';
 import 'package:json_api/http.dart';
 import 'package:json_api_server/src/dart_io_http_handler.dart';
 import 'package:pedantic/pedantic.dart';
@@ -17,7 +18,7 @@ class JsonApiServer {
   /// Server port
   final int port;
 
-  final HttpHandler _handler;
+  final Handler<HttpRequest, HttpResponse> _handler;
   HttpServer _server;
 
   /// Server uri

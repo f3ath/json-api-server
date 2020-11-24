@@ -1,6 +1,6 @@
 name: json_api_server
 description: JSON:API Server
-version: 0.1.0-dev.1
+version: 0.1.0-dev.2
 
 environment:
   sdk: '>=2.10.0 <3.0.0'
